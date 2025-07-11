@@ -16,7 +16,7 @@ type ShelfPage struct {
 type Book struct {
     ID   string `json:"id"`
     Type string `json:"type"`
-    Name string `json:"name"`
+    Title string `json:"title"`
     // Add more fields if you want, e.g. author, cover, etc.
 }
 
@@ -41,6 +41,33 @@ func fetchShelf(shelfURL string) (*ShelfPage, error) {
     return &page, nil
 }
 
+
+func fetchBookTitle(bookURL string) (string, error) {
+	client := &http.Client{}
+
+	// Create request
+	req, err := http.NewRequest("GET", bookURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Accept", "application/activity+json")
+
+	// Execute request
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Decode JSON response into BookDetails struct
+	var book Book
+	if err := json.NewDecoder(resp.Body).Decode(&book); err != nil {
+		return "", err
+	}
+
+	return book.Title, nil
+}
+
 func main() {
     shelves := map[string]string{
         "To Read":        "https://bookwyrm.social/user/basedmukh/books/to-read?page=1",
@@ -57,7 +84,12 @@ func main() {
             continue
         }
         for _, book := range page.OrderedItems {
-            fmt.Printf("  - %s (ID: %s)\n", book.Name, book.ID)
+        	title, err := fetchBookTitle(book.ID)
+        	if err != nil {
+        		log.Printf("Error fetching the book title for %s: %v\n", book.ID, err)
+        		continue
+        	}
+            fmt.Printf("  - %s (ID: %s)\n", title, book.ID)
         }
     }
 }
