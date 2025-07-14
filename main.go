@@ -6,6 +6,7 @@ import (
     "fmt"
     "log"
     "net/http"
+    "os"
 )
 
 // Define minimal structs to parse the JSON
@@ -69,11 +70,17 @@ func fetchBookTitle(bookURL string) (string, error) {
 }
 
 func main() {
+    if len(os.Args) < 2 {
+    	fmt.Println("Usage: go run main.go <username>")
+    	return
+    }
+    
+    user := os.Args[1]
     shelves := map[string]string{
-        "To Read":        "https://bookwyrm.social/user/basedmukh/books/to-read?page=1",
-        "Reading":        "https://bookwyrm.social/user/basedmukh/books/reading?page=1",
-        "Read":           "https://bookwyrm.social/user/basedmukh/books/read?page=1",
-        "Stopped Reading": "https://bookwyrm.social/user/basedmukh/books/stopped-reading?page=1",
+        "To Read":        fmt.Sprintf("https://bookwyrm.social/user/%s/books/to-read?page=1", user),
+        "Reading":        fmt.Sprintf("https://bookwyrm.social/user/%s/books/reading?page=1", user),
+        "Read":           fmt.Sprintf("https://bookwyrm.social/user/%s/books/read?page=1", user),
+        "Stopped Reading": fmt.Sprintf("https://bookwyrm.social/user/%s/books/stopped-reading?page=1", user),
     }
 
     for name, url := range shelves {
