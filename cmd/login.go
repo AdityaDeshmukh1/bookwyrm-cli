@@ -1,8 +1,11 @@
+
 package cmd
 
 import (
     "fmt"
+    "io"
     "log"
+    "strings"
 
     "github.com/spf13/cobra"
     "github.com/adityadeshmukh1/bookwyrm-cli/client"
@@ -26,17 +29,24 @@ var loginCmd = &cobra.Command{
             log.Fatalf("Login failed: %v", err)
         }
 
-        // Simple test: fetch home page to confirm session
+        // Fetch home page to confirm login
         resp, err := httpClient.Get("https://bookwyrm.social/home")
         if err != nil {
             log.Fatalf("Failed to fetch home page after login: %v", err)
         }
         defer resp.Body.Close()
 
-        if resp.StatusCode == 200 {
-            fmt.Printf("Login successful! Welcome, %s.\n", loginUsername)
+        bodyBytes, err := io.ReadAll(resp.Body)
+        if err != nil {
+            log.Fatalf("Failed to read home page content: %v", err)
+        }
+
+        bodyStr := string(bodyBytes)
+
+        if strings.Contains(strings.ToLower(bodyStr), "logout") {
+            fmt.Printf("✅ Login successful! Welcome, %s.\n", loginUsername)
         } else {
-            fmt.Printf("Login might have failed, status code: %d\n", resp.StatusCode)
+            fmt.Printf("❌ Login may have failed — 'logout' not found in page. Status code: %d\n", resp.StatusCode)
         }
     },
 }
@@ -47,3 +57,4 @@ func init() {
     loginCmd.Flags().StringVarP(&loginUsername, "username", "u", "", "Bookwyrm username")
     loginCmd.Flags().StringVarP(&loginPassword, "password", "p", "", "Bookwyrm password")
 }
+
